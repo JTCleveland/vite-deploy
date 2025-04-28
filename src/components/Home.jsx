@@ -1,38 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './Header';
 import CardPizza from './CardPizza';
-import pizza1 from '../assets/pizza1.jpg';
-import pizza2 from '../assets/pizza2.jpg';
-import pizza3 from '../assets/pizza3.jpg';
+import { pizzas } from './pizzas';
+import Cart from './Cart';
 
 function Home() {
-    return (
-      <div>
-        <Header />
+  const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const handleAddToCart = useCallback((pizza) => {
+    const existingPizza = cart.find((item) => item.name === pizza.name);
+    if (existingPizza) {
+      const newCart = cart.map((item) => {
+        if (item.name === pizza.name) {
+          return { ...item, count: item.count + 1 };
+        }
+        return item;
+      });
+      setCart(newCart);
+    } else {
+      setCart([...cart, { ...pizza, count: 1 }]);
+    }
+  }, [cart, setCart]);
+
+  const handleRemoveFromCart = useCallback((pizza) => {
+    const newCart = cart.map((item) => {
+      if (item.name === pizza.name) {
+        return { ...item, count: item.count - 1 };
+      }
+      return item;
+    }).filter((item) => item.count > 0 || item.name !== pizza.name);
+    setCart(newCart);
+  }, [cart, setCart]);
+
+  return (
+    <div>
+      <Header />
       <div className="card-container">
-      <CardPizza
-        name="Napolitana"
-        price={5950}
-        ingredients={["mozzarella", "tomates", "jamón", "orégano"]}
-        img={pizza1}
-        />
-
-       <CardPizza
-        name="Española"
-        price={6950}
-        ingredients={["mozzarella", "gorgonzola", "parmesano", "provolone"]}
-        img={pizza2}
-        />
-
-       <CardPizza
-        name="Pepperoni"
-        price={6950}
-        ingredients={["mozzarella", "pepperoni", "orégano"]}
-        img={pizza3}
-/>
+        {pizzas.map((pizza) => (
+          <CardPizza
+            key={pizza.id}
+            name={pizza.name}
+            price={pizza.price}
+            ingredients={pizza.ingredients}
+            img={pizza.img}
+            onClick={handleAddToCart}
+          />
+        ))}
       </div>
-      </div>
-    );
-  }
-  
-  export default Home;
+      <Cart
+        cart={cart}
+        handleAddToCart={handleAddToCart}
+        handleRemoveFromCart={handleRemoveFromCart}
+      />
+    </div>
+  );
+}
+
+export default Home;
